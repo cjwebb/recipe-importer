@@ -1,20 +1,18 @@
 import json
 import uuid
+import codecs
 
-file = "/Users/colin/Downloads/recipeitems-latest.json"
+file = "nice.json"
 
 count = 0
 
 def create_ingredient(name):
     uid = str(uuid.uuid4());
-    print 'MERGE (f:Food{ name:"' + name + '"}) ON CREATE SET f.id = "' + uid +'";'
-    return uid
+    cypher = 'MERGE (f:Food{ name:"' + name + '"}) ON CREATE SET f.id = "' + uid +'";'
+    return uid, cypher
 
-def create_ingredient_rel(fid, iid):
-    print 'MATCH (r:Recipe {id: "' + fid + '"}),(f:Food{id:"'+iid+'"}) CREATE (r)-[:CONTAINS]->(f);'
-
-def ingredients_split(ingredients):
-    return map(unicode.strip, ingredients.split("\n"))
+def create_ingredient_rel(fid, iname):
+    return 'MATCH (r:Recipe {id: "' + fid + '"}),(f:Food{name:"'+iname+'"}) CREATE (r)-[:CONTAINS]->(f);'
 
 def create_food(f):
     name = f.get('name')
@@ -33,18 +31,17 @@ def create_food(f):
     if description is not None:
         attrs = attrs + ', description: "' + description + '"'
 
-    out = "MERGE (f:Food:Recipe {" + attrs + "});"
-    print out.encode('ascii', 'ignore')
+    with codecs.open('cypher.out', 'a', encoding='utf-8') as out:
+        out.write("MERGE (f:Food:Recipe {" + attrs + "});"+'\n')
 
-    i = ingredients_split(f.get('ingredients'))
-    for x in i:
-        x = x.encode('ascii','ignore')
-        iid = create_ingredient(x)
-        create_ingredient_rel(uid, iid)
+        for x in f.get('parsed_ingredients'):
+            iid, cypher = create_ingredient(x)
+            out.write(cypher + '\n')
+            out.write(create_ingredient_rel(uid, x) + '\n')
 
-for line in open(file, 'r'):
+for line in codecs.open(file, encoding='utf-8'):
     j = json.loads(line)
-    if j['source'] == 'bbcfood' and j.get('image') is not None:
-        count = count + 1
-        create_food(j)
+    create_food(j)
+    count = count + 1
 
+print count
