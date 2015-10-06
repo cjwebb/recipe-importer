@@ -19,9 +19,9 @@ def create_food(f):
     url = f.get('url')
     image = f.get('image')
     description = f.get('description')
-    uid = str(uuid.uuid4())
+    id = f.get('id')
 
-    attrs = 'id: "' + uid + '"' 
+    attrs = 'id: "' + id + '"'
     if name is not None:
         attrs = attrs + ', name: "' + name + '"' 
     if url is not None:
@@ -37,7 +37,7 @@ def create_food(f):
         for x in f.get('parsed_ingredients'):
             iid, cypher = create_ingredient(x)
             out.write(cypher + '\n')
-            out.write(create_ingredient_rel(uid, x) + '\n')
+            out.write(create_ingredient_rel(id, x) + '\n')
 
 for line in codecs.open(file, encoding='utf-8'):
     j = json.loads(line)
